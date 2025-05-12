@@ -19,7 +19,7 @@ const Edu = () => {
     {
       id: 1,
       degree: 'Secondary School Leaving Certificate (SSLC)',
-      institution: 'Kongu Kalvi Milayam Mat Hr Sec School, Erode, Tamil Nadu',
+      institution: 'Kongu Kalvi Nilayam Mat Hr Sec School, Erode, Tamil Nadu',
       duration: '2019-2020',
       description: 'Percentage: 59%',
       category: 'school',
