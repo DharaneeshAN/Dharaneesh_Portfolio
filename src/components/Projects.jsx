@@ -234,8 +234,8 @@ const Projects = () => {
   });
 
   const handleProjectDetails = (project) => {
-    // setSelectedProject(project);
-    // setShowModal(true);
+    setSelectedProject(project);
+    setShowModal(true);
   };
 
   const closeModal = () => {
