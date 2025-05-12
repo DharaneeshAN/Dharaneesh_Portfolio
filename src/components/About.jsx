@@ -56,10 +56,10 @@ const About = () => {
   };
 
   const handleResumeDownload = () => {
-    const resumeUrl = 'public/assets/Dharaneesh resume port.pdf'; // Ensure this path is correct
-    const link = document.createElement('a');
+    const resumeUrl = '/assets/Dharaneesh resume port.pdf'; // Ensure this path is correct
+    const link = document.createElement('/assets/Dharaneesh resume port.pdf');
     link.href = resumeUrl;
-    link.download = 'Dharaneeshresume.pdf';
+    link.download = 'Dharaneesh resume port.pdf';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
