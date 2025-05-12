@@ -128,7 +128,7 @@ const About = () => {
     {
       year: '2020',
       title: 'Completed SSLC',
-      description: 'Graduated from Kongu Kalvi Milayam Mat Hr Sec School.',
+      description: 'Graduated from Kongu Kalvi Nilayam Mat Hr Sec School.',
       icon: <FaGraduationCap className="text-2xl text-blue-400" />,
     },
     {
