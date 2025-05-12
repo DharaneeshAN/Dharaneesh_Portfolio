@@ -56,7 +56,7 @@ const About = () => {
   };
 
   const handleResumeDownload = () => {
-    const resumeUrl = '/assets/DharaneeshANresume new.pdf'; // Ensure this path is correct
+    const resumeUrl = 'public/assets/Dharaneesh resume port.pdf'; // Ensure this path is correct
     const link = document.createElement('a');
     link.href = resumeUrl;
     link.download = 'Dharaneeshresume.pdf';
