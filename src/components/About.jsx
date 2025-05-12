@@ -57,9 +57,10 @@ const About = () => {
 
   const handleResumeDownload = () => {
     const resumeUrl = '/assets/DharaneeshANresume new.pdf'; // Ensure this path is correct
-    const link = document.createElement('/assets/DharaneeshANresume new.pdf');
+    const link = document.createElement('a');
     link.href = resumeUrl;
     link.download = 'DharaneeshANresume new.pdf';
+    link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
