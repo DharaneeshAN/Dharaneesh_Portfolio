@@ -1,37 +1,43 @@
 /**
- * Clean Smooth Scrolling Utility (WORKING)
+ * Enhanced Smooth Scrolling Utility
+ * Optimized for performance, accessibility, and modern browsers
  */
 
 import { easings } from './easings';
 
-let animationFrameId = null;
-
 /**
- * Init
+ * Initialize smooth scrolling with progress indicator and reveal animations
+ * @returns {Object} Methods to manage and destroy the instance
  */
 export const initSmoothScroll = () => {
-  setupScrollProgressIndicator();
+  // Disable intensive animations on mobile for performance
+  if (window.innerWidth < 640) {
+    setupScrollProgressIndicator();
+    return { destroy: () => {} };
+  }
+
+  // Setup progress bar and observer
+  const progressBar = setupScrollProgressIndicator();
   const observer = setupIntersectionObserver();
 
-  // Handle URL hash on load
+  // Handle hash links on page load
   if (window.location.hash) {
     setTimeout(() => {
-      scrollToElement(window.location.hash);
+      scrollToElement(window.location.hash, 60, 600);
     }, 300);
   }
 
-  // Anchor clicks
+  // Add anchor click listeners
   const handleAnchorClick = (e) => {
     const href = e.currentTarget.getAttribute('href');
-
-    if (href && href.startsWith('#')) {
-      e.preventDefault();
-      scrollToElement(href);
+    if (href?.startsWith('#') && href.length > 1) {
+      
+      scrollToElement(href, 60, 600);
     }
   };
 
   document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-    anchor.addEventListener('click', handleAnchorClick); // ✅ no passive
+    anchor.addEventListener('click', handleAnchorClick, { passive: true });
   });
 
   return {
@@ -40,32 +46,37 @@ export const initSmoothScroll = () => {
       document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
         anchor.removeEventListener('click', handleAnchorClick);
       });
+      if (progressBar) {
+        window.removeEventListener('scroll', progressBar.update);
+      }
     },
   };
 };
 
 /**
- * Progress Bar
+ * Setup scroll progress indicator
+ * @returns {Object|null} Progress bar controller
  */
 export const setupScrollProgressIndicator = () => {
-  const bar = document.querySelector('.scroll-progress-bar');
-  if (!bar) return;
+  const progressBar = document.querySelector('.scroll-progress-bar');
+  if (!progressBar) return null;
 
   const update = () => {
     const scrollTop = window.scrollY;
-    const height =
-      document.documentElement.scrollHeight - window.innerHeight;
-
-    const percent = height > 0 ? (scrollTop / height) * 100 : 0;
-    bar.style.width = percent + '%';
+    const height = document.documentElement.scrollHeight - window.innerHeight;
+    const percentage = height > 0 ? Math.min(100, (scrollTop / height) * 100) : 0;
+    progressBar.style.width = `${percentage}%`;
   };
 
   window.addEventListener('scroll', update, { passive: true });
   update();
+
+  return { element: progressBar, update };
 };
 
 /**
- * Reveal Animation
+ * Setup intersection observer for reveal animations
+ * @returns {IntersectionObserver} Observer instance
  */
 export const setupIntersectionObserver = () => {
   const observer = new IntersectionObserver(
@@ -73,10 +84,15 @@ export const setupIntersectionObserver = () => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           entry.target.classList.add('active');
+          if (entry.target.dataset.once !== 'false') {
+            observer.unobserve(entry.target);
+          }
+        } else if (entry.target.dataset.once === 'false') {
+          entry.target.classList.remove('active');
         }
       });
     },
-    { threshold: 0.1 }
+    { rootMargin: '0px', threshold: 0.1 }
   );
 
   document.querySelectorAll('.reveal-on-scroll').forEach((el) => {
@@ -87,39 +103,34 @@ export const setupIntersectionObserver = () => {
 };
 
 /**
- * Smooth Scroll (FIXED)
+ * Smoothly scroll to an element
+ * @param {string} selector - CSS selector or ID
+ * @param {number} [offset=0] - Scroll offset in pixels
+ * @param {number} [duration=600] - Animation duration in ms
  */
-export const scrollToElement = (selector, offset = 60) => {
+export const scrollToElement = (selector, offset = 0, duration = 600) => {
   const target = document.querySelector(selector);
   if (!target) return;
 
-  // Cancel previous animation
-  if (animationFrameId) {
-    cancelAnimationFrame(animationFrameId);
-  }
-
   const start = window.scrollY;
-  const targetY =
-    target.getBoundingClientRect().top +
-    window.pageYOffset -
-    offset;
-
+  const targetY = target.getBoundingClientRect().top + start - offset;
   const distance = targetY - start;
   let startTime = null;
-  const duration = 600;
 
-  const animate = (time) => {
-    if (!startTime) startTime = time;
+  const animation = (currentTime) => {
+    if (!startTime) startTime = currentTime;
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const scrollY = easings.easeOutCubic(elapsed, start, distance, duration);
 
-    const progress = Math.min((time - startTime) / duration, 1);
-    const ease = easings.easeOutCubic(progress);
-
-    window.scrollTo(0, start + distance * ease);
+    window.scrollTo(0, scrollY);
 
     if (progress < 1) {
-      animationFrameId = requestAnimationFrame(animate);
+      requestAnimationFrame(animation);
+    } else {
+      window.location.hash = selector; // Update URL hash
     }
   };
 
-  animationFrameId = requestAnimationFrame(animate);
+  requestAnimationFrame(animation);
 };
