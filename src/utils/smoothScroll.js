@@ -1,5 +1,5 @@
 /**
- * Smooth Scrolling Utility - FIXED VERSION
+ * Clean Smooth Scrolling Utility (WORKING)
  */
 
 import { easings } from './easings';
@@ -7,90 +7,65 @@ import { easings } from './easings';
 let animationFrameId = null;
 
 /**
- * Initialize smooth scrolling
+ * Init
  */
 export const initSmoothScroll = () => {
-  // Mobile → use native smooth scroll
-  if (window.innerWidth < 640) {
-    document.documentElement.style.scrollBehavior = 'smooth';
-    setupScrollProgressIndicator();
-    return { destroy: () => {} };
-  }
-
-  const progressBar = setupScrollProgressIndicator();
+  setupScrollProgressIndicator();
   const observer = setupIntersectionObserver();
 
-  // Handle page load with hash
+  // Handle URL hash on load
   if (window.location.hash) {
     setTimeout(() => {
       scrollToElement(window.location.hash);
     }, 300);
   }
 
-  // Anchor click handler
+  // Anchor clicks
   const handleAnchorClick = (e) => {
     const href = e.currentTarget.getAttribute('href');
 
-    if (href && href.startsWith('#') && href.length > 1) {
+    if (href && href.startsWith('#')) {
       e.preventDefault();
       scrollToElement(href);
     }
   };
 
   document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-    anchor.addEventListener('click', handleAnchorClick); // ✅ FIXED (no passive)
+    anchor.addEventListener('click', handleAnchorClick); // ✅ no passive
   });
 
   return {
     destroy: () => {
       observer?.disconnect();
-
       document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
         anchor.removeEventListener('click', handleAnchorClick);
       });
-
-      if (progressBar) {
-        window.removeEventListener('scroll', progressBar.update);
-      }
     },
   };
 };
 
 /**
- * Scroll Progress Bar
+ * Progress Bar
  */
 export const setupScrollProgressIndicator = () => {
-  const progressBar = document.querySelector('.scroll-progress-bar');
-  if (!progressBar) return null;
-
-  let ticking = false;
+  const bar = document.querySelector('.scroll-progress-bar');
+  if (!bar) return;
 
   const update = () => {
     const scrollTop = window.scrollY;
     const height =
       document.documentElement.scrollHeight - window.innerHeight;
 
-    const percentage = height > 0 ? (scrollTop / height) * 100 : 0;
-
-    progressBar.style.width = percentage + '%';
-    ticking = false;
+    const percent = height > 0 ? (scrollTop / height) * 100 : 0;
+    bar.style.width = percent + '%';
   };
 
-  const onScroll = () => {
-    if (!ticking) {
-      requestAnimationFrame(update);
-      ticking = true;
-    }
-  };
-
-  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('scroll', update, { passive: true });
   update();
-
-  return { update };
 };
 
 /**
- * Reveal Animations
+ * Reveal Animation
  */
 export const setupIntersectionObserver = () => {
   const observer = new IntersectionObserver(
@@ -98,12 +73,6 @@ export const setupIntersectionObserver = () => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           entry.target.classList.add('active');
-
-          if (entry.target.dataset.once !== 'false') {
-            observer.unobserve(entry.target);
-          }
-        } else if (entry.target.dataset.once === 'false') {
-          entry.target.classList.remove('active');
         }
       });
     },
@@ -118,21 +87,10 @@ export const setupIntersectionObserver = () => {
 };
 
 /**
- * Smooth Scroll Function (FIXED)
+ * Smooth Scroll (FIXED)
  */
-export const scrollToElement = (
-  selector,
-  offset = 60,
-  duration = 600
-) => {
-  let target;
-
-  try {
-    target = document.querySelector(selector);
-  } catch {
-    return;
-  }
-
+export const scrollToElement = (selector, offset = 60) => {
+  const target = document.querySelector(selector);
   if (!target) return;
 
   // Cancel previous animation
@@ -140,40 +98,26 @@ export const scrollToElement = (
     cancelAnimationFrame(animationFrameId);
   }
 
-  const prefersReducedMotion = window.matchMedia(
-    '(prefers-reduced-motion: reduce)'
-  ).matches;
-
   const start = window.scrollY;
   const targetY =
-    target.getBoundingClientRect().top + start - offset;
+    target.getBoundingClientRect().top +
+    window.pageYOffset -
+    offset;
 
   const distance = targetY - start;
-
-  // No animation if user prefers reduced motion
-  if (prefersReducedMotion) {
-    window.scrollTo(0, targetY);
-    return;
-  }
-
   let startTime = null;
+  const duration = 600;
 
-  const animate = (currentTime) => {
-    if (!startTime) startTime = currentTime;
+  const animate = (time) => {
+    if (!startTime) startTime = time;
 
-    const elapsed = currentTime - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-
-    // ✅ Correct easing usage
+    const progress = Math.min((time - startTime) / duration, 1);
     const ease = easings.easeOutCubic(progress);
-    const scrollY = start + distance * ease;
 
-    window.scrollTo(0, scrollY);
+    window.scrollTo(0, start + distance * ease);
 
     if (progress < 1) {
       animationFrameId = requestAnimationFrame(animate);
-    } else {
-      window.location.hash = selector;
     }
   };
 
